@@ -13,7 +13,7 @@ from qrcode import *
 gnupg_home = '/home/dc801ctf'
 db_user = 'root'
 db_ip = 'localhost'
-db_password = ''
+db_password = '8a5kSjQ1kK0JUlmzKiH2S8'
 db_database = 'dc801_ctf'
 team_salt_length = 32
 flag_directory = 'qr_flags'
@@ -34,6 +34,24 @@ def print_flags(flags):
 	for flag in flags:
 		print flag
 
+def get_teamflags(passphrase):
+	
+	#select count(flags.id),teams.name from teams join flags on flags.team_owner_id = teams.id;
+	with con: 
+
+		cur = con.cursor(mdb.cursors.DictCursor)
+		cur.execute("select * from teams join flags on flags.team_owner_id = teams.id")
+		rows = cur.fetchall()	
+
+		teamsandflags = [] 
+		for row in rows:
+			flag = gpg.decrypt(row['text'],passphrase=passphrase).data
+			row['text'] = flag
+			teamsandflags.append(row)
+
+		return teamsandflags
+		
+
 def get_flags(passphrase):
 
 	with con: 
@@ -51,22 +69,31 @@ def get_flags(passphrase):
 		return flags
 
 
-
 def enter_flag():
+	try:
+		flag  = raw_input('Enter Flag Text:')
+		team_id = raw_input('Enter Team ID:')
+		print "Saving Flag: %s to database." % (flag) 
 
-	flag  = raw_input('Enter Flag Text:')
-	print "Saving Flag: %s to database." % (flag) 
+		with con:    
+			cur = con.cursor()
+			encrypted_flag = encrypt(flag.strip()) 
+			cur.execute("INSERT INTO flags (created,text,points,team_owner_id) values (NOW(),%s,'1000.00',%s)", (encrypted_flag,team_id))
+			print "Number of rows effected: %d" % cur.rowcount
 
-	with con:    
-		cur = con.cursor()
-		encrypted_flag = encrypt(flag) 
-		cur.execute("INSERT INTO flags (created,text,points) values (NOW(),%s,'1000.00')", (encrypted_flag))
-		print "Number of rows effected: %d" % cur.rowcount
+	except:
+		print "Add failed..."
 
+
+def setup_gpg(email,passphrase):
+
+	input_data = gpg.gen_key_input(name_email=email,passphrase=passphrase)
+	key = gpg.gen_key(input_data)
+	print key
 
 def enter_team():
 	team_name  = raw_input('Enter Team Name:')
-	print "Saving Team: %s to database." % (team_name) 
+	print "Saving Team: %s to database." % (team_name.strip()) 
 
 	salt = os.urandom(team_salt_length).encode('hex')
 	with con:    
@@ -81,7 +108,7 @@ def delete_team(id):
 		cur.execute("delete from teams where id = %s", (id))
 		print "Number of rows effected: %d" % cur.rowcount
 
-	
+
 
 def generate_qrcodes():
 
@@ -90,35 +117,28 @@ def generate_qrcodes():
 	if not os.path.exists(flag_directory):
 	    os.makedirs(flag_directory)
 
-	flags = get_flags(entered_passphrase)	
+	flags_and_teams = get_teamflags(entered_passphrase)	
 	teams = get_teams()
 
 	timestamp = int(time.time()) 
 
-	for team in teams:
-			print "--------------------------------"
-			print 'Team name: '+ team['name']
-			print "--------------------------------"
-			print "\n"
+	for flag in flags_and_teams:
 
-		for flag in flags:
-			qr = QRCode(version=20, error_correction=ERROR_CORRECT_L)
-			qr.add_data(flag)
-			qr.make() # Generate the QRCode itself
+		qr = QRCode(version=20, error_correction=ERROR_CORRECT_L)
+		qr.add_data(flag['text'].strip())
+		qr.make() # Generate the QRCode itself
+		# im contains a PIL.Image.Image object
+		im = qr.make_image()
 
-			# im contains a PIL.Image.Image object
-			im = qr.make_image()
-
-			# To save it
-		
-			salt = os.urandom(team_salt_length).encode('hex')
-			filename = "./"+flag_directory +"/"+team['name']+ "/" +str(flag['id']) +"_"+str(salt)+ str(timestamp) + '.png'
-			im.save(filename)
-			print "\n"
-			print flag['text']
-			print filename
-
-
+		if not os.path.exists(flag_directory +"/"+ flag['name']):
+			os.makedirs(flag_directory + "/" + flag['name'])
+		# To save it
+		salt = os.urandom(team_salt_length).encode('hex')
+		filename = "./"+flag_directory +"/"+flag['name']+ "/" +str(flag['id']) +"_"+str(salt)+ str(timestamp) + '.png'
+		im.save(filename)
+		print "\n"
+		print flag['text']
+		print filename
 
 def get_teams():
 
@@ -127,6 +147,25 @@ def get_teams():
 		cur.execute("SELECT * FROM teams")
 		rows = cur.fetchall()
 		return rows
+
+def save_team_hash(flag_id,team_id,flag_hash):
+	with con:    
+		cur = con.cursor()
+		cur.execute("insert into flag_hashes(submission_team_id,flag_id,hash) values(%s,%s,%s);", (team_id,flag_id,flag_hash))
+
+def get_teams_capturable_flags(id,passphrase):
+
+	with con:
+		cur = con.cursor(mdb.cursors.DictCursor)
+		cur.execute("select * from flags where team_owner_id != %s",(id))
+		rows = cur.fetchall()
+		flags = []
+		for row in rows:
+			flag = gpg.decrypt(row['text'],passphrase=passphrase).data
+			row['text'] = flag
+			flags.append(row)
+
+		return flags
 
 def list_teams():
 	teams = get_teams()
@@ -149,13 +188,14 @@ def generate_team_hashes():
 			not_decrypted = False
 			master_salt = raw_input('Enter Master Salt:')
 			teams = get_teams()
-
+			print teams 
 			for team in teams:
 				print "--------------------------------"
 				print 'Team name: '+ team['name']
 				print "--------------------------------"
 				print "\n"
-
+				flags = get_teams_capturable_flags(team['id'],entered_passphrase)
+				print flags
 				for flag in flags:
 					
 					print  'Flag Name: ' + flag['text']
@@ -163,9 +203,23 @@ def generate_team_hashes():
 					stored_team_hash = hmac.new(master_salt,teamflag_hash,sha256).hexdigest()
 					print teamflag_hash
 					print stored_team_hash
+					save_team_hash(flag['id'],team['id'],stored_team_hash)
 
-	
-		
+
+
+def manual_check_flags(team_salt):
+#select * from flag_hashes where hash =
+	with con:
+		cur = con.cursor(mdb.cursors.DictCursor)
+		cur.execute("select * from flag_hashes where hash = %s",(master_salt))
+		rows = cur.fetchall()
+		flags = []
+		for row in rows:
+			flag = gpg.decrypt(row['text'],passphrase=passphrase).data
+			row['text'] = flag
+			flags.append(row)
+
+		return flags
 
 while setup_menu_run:
 	os.system('clear')
@@ -177,6 +231,7 @@ while setup_menu_run:
 	print "5: Delete Team"
 	print "6: Generate Team Hashes"
 	print "7: Genearate Flag QRCodes"
+	print "8: Setup GPG KEY"
 	print "q: Quit"
 
 	setup_menu =raw_input('---> ')
@@ -212,6 +267,12 @@ while setup_menu_run:
 	elif setup_menu == '7':
 		os.system('clear')
 		generate_qrcodes()
+		raw_input("Press Enter to continue...")
+	elif setup_menu == '8':
+		os.system('clear')
+		email = raw_input("Enter e-mail:")
+		passphrase = raw_input("Enter passphrase")
+		setup_gpg(email,passphrase)
 		raw_input("Press Enter to continue...")
 	elif setup_menu == 'q':
 		setup_menu_run = False

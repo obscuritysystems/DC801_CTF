@@ -26,9 +26,8 @@ submission_team_id INT UNSIGNED,
 flag_id INT UNSIGNED,
 hash VARCHAR(254),
 PRIMARY KEY (id),
-FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`),
+FOREIGN KEY (`submission_team_id`) REFERENCES `teams` (`id`),
 FOREIGN KEY (`flag_id`) REFERENCES `flags` (`id`)
-ower_team_id INT UNSIGNED,
 )ENGINE=InnoDB;
 
 CREATE TABLE captures(
