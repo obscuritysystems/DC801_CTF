@@ -1,0 +1,16 @@
+{% extends "ctf/base.html" %}
+
+{% block title %}DC801 Open West FFA CTF 2013{% endblock %}
+{% block head %}DC801 Open West FFA CTF 2013{% endblock %}
+
+{% block content %}
+  {% if user.username %}
+    <p> {{ user.username }}! 
+      </p>
+  {% else %}
+    <p>Welcome anonymous user! 
+      You need to <a href="/login">login</a>
+      or <a href="/register">register</a>
+      before you can submit flags</p>
+  {% endif %}
+{% endblock %}

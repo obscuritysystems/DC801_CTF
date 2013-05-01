@@ -1,0 +1,12 @@
+{% extends "ctf/base.html" %}
+
+{% block title %}DC801 Open West FFA CTF 2013{% endblock %}
+{% block head %}DC801 Open West FFA CTF 2013{% endblock %}
+
+{% block content %}
+<form action="/flag_submit/" method="post">{% csrf_token %}
+{{ form.as_p }}
+<input type="submit" value="Submit" />
+</form>
+{% endblock %}
+
