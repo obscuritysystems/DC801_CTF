@@ -1,0 +1,32 @@
+{% extends "ctf/base.html" %}
+
+{% block title %}DC801 Open West FFA CTF 2013{% endblock %}
+{% block head %}DC801 Open West FFA CTF 2013{% endblock %}
+
+{% block content %}
+  {% if user.username %}
+    <p> {{ user.username }}! Score {{score}} </p>
+        <p>click here to <a href="/flag_submit">Submit Flags</a></p>
+        {% if my_captures %}
+            <ul>
+            {% for capture in my_captures %}   
+                  <p>
+                    Captured Flag:
+                    {{capture.flag.id}}
+                    Captured Date:
+                    {{capture.capture_date}}
+                  </p>
+            {% endfor %}
+        </ul>
+        {% else %}
+                <p>No captures as of yet!</p>
+        {% endif %}
+  {% else %}
+    <p>Welcome anonymous user! 
+      You need to <a href="/login">login</a>
+      or <a href="/register">register</a>
+      before you can submit flags</p>
+    <p>Rules: DO NOT ATTACK THE SCORING SERVER! NO physical ATTACKS! </p>
+    <p>Example Flag: 0f3dd248cda04eee8de760c932e1810360d2ad9a</p>
+  {% endif %}
+{% endblock %}

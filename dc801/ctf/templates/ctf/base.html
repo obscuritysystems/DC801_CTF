@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+  <title>DC801 CTF | {% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="/site_media/style.css" type="text/css" />
+</head>
+
+<body>
+  <div id="nav">
+    <a href="/">home</a> |
+    <a href="/score_board/">score_board</a>
+    {% if user.is_authenticated %}   
+    <a href="/flag_submit/">flag_submit</a>
+       {{ user.username }}
+      (<a href="/logout/">logout</a>)
+    {% else %}
+      <a href="/login/">login</a> |
+      <a href="/register/">register</a> |
+      <a href="kali-linux-1.0.1-amd64.iso">Kali Linux</a>
+    {% endif %}
+  </div>
+  <h1>{% block head %}{% endblock %}</h1>
+  {% block content %}{% endblock %}
+</body>
+</html>

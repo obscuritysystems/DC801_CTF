@@ -1,0 +1,17 @@
+{% extends "ctf/base.html" %}
+
+{% block title %}{{ username }}{% endblock %}
+{% block head %}Bookmarks for {{ username }}{% endblock %}
+
+{% block content %}
+  {% if bookmarks %}
+    <ul>
+      {% for bookmark in bookmarks %}
+        <li><a href="{{ bookmark.link.url }}">
+          {{ bookmark.title }}</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No bookmarks found.</p>
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "ctf/base.html" %}
+
+{% block title %}DC801 Open West FFA CTF 2013{% endblock %}
+{% block head %}DC801 Open West FFA CTF 2013{% endblock %}
+
+
+{% block content %}
+
+<p> ONLY ATTACK these networks WIRED 10.108.69.0/24 and WIRESS SSID HACKME2 10.108.30.0/24</p>
+
+{% if user_scores %}
+    <div>
+    <table>
+    <tr>
+    <th>User</th>
+    <th>Score</th>
+    </tr>
+    {% for score in user_scores%} 
+        <tr>
+          <td>{{score.username}} </td> <td>{{score.score}}</td>
+        </tr>
+    {% endfor %}
+    </table>
+    </div>
+{% else %}
+    <p>No polls are available.</p>
+{% endif %}
+
+{% endblock %}
